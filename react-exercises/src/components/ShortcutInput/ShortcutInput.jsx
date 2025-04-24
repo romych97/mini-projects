@@ -4,42 +4,33 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 const ShortcutInput = ({ value, modifiers, onChange }) => {
   const [pressedKeys, setPressedKeys] = useState([]);
+
   const [isFocused, setIsFocused] = useState(false);
   const [isValid, setIsValid] = useState(false);
+
   const [currentShortcut, setCurrentShortcut] = useState(value);
   const [pendingShortcut, setPendingShortcut] = useState(null);
   const [lastValidShortcut, setLastValidShortcut] = useState(value);
+
   const containerRef = useRef(null);
 
-  const isModifierKey = useCallback(
-    (key) => {
-      const normalizedKey = key.toLowerCase();
-      return modifiers.some((mod) => mod.toLowerCase() === normalizedKey);
-    },
-    [modifiers]
-  );
+  const isModifierKey = (key, modifiers) =>
+    modifiers.some((mod) => mod.toLowerCase() === key.toLowerCase());
 
-  const isValidNonModifierKey = useCallback(
-    (key) => {
-      if (key.length !== 1) return false;
-      const isNonEnglish = /[^\x00-\x7F]/.test(key);
-      if (isNonEnglish) return false;
-      return !isModifierKey(key);
-    },
-    [isModifierKey]
-  );
+  const isValidNonModifierKey = (key, modifiers) =>
+    key.length === 1 &&
+    /^[\x00-\x7F]$/.test(key) &&
+    !isModifierKey(key, modifiers);
 
   const parseShortcut = useCallback(
     (keys) => {
-      const mods = keys.filter(isModifierKey);
-      const nonMods = keys.filter(isValidNonModifierKey);
-
-      if (mods.length >= 1 && nonMods.length === 1) {
-        return [...mods, ...nonMods].join("+");
-      }
-      return null;
+      const mods = keys.filter((k) => isModifierKey(k, modifiers));
+      const nonMods = keys.filter((k) => isValidNonModifierKey(k, modifiers));
+      return mods.length && nonMods.length === 1
+        ? [...mods, ...nonMods].join("+")
+        : null;
     },
-    [isModifierKey, isValidNonModifierKey]
+    [modifiers]
   );
 
   const handleKeyDown = useCallback(
@@ -109,7 +100,6 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
         setCurrentShortcut(lastValidShortcut || "");
       }
     }
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
@@ -125,7 +115,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
 
   const displayValue =
     pressedKeys.length > 0 && !lastValidShortcut
-      ? pressedKeys.join(" + ")
+      ? pressedKeys.join(" ")
       : lastValidShortcut || currentShortcut || "Press shortcut";
 
   return (
@@ -139,21 +129,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
           setCurrentShortcut(lastValidShortcut || "");
         }
       }}
-      className={`
-                p-4
-                border-2
-                rounded-lg
-                bg-white
-                text-gray-800
-                cursor-text
-                select-none
-                min-w-[200px]
-                text-center
-                transition-colors
-                duration-200
-                outline-none
-                ${getBorderColor()}
-            `}
+      className={`${getBorderColor()} p-4 border-2 rounded-lg bg-white text-gray-800 min-w-[200px] text-center transition-colors duration-200 outline-none`}
     >
       {displayValue}
     </div>
