@@ -4,11 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 const ShortcutInput = ({ value, modifiers, onChange }) => {
   const [pressedKeys, setPressedKeys] = useState([]);
-  console.log("🚀 ~ ShortcutInput ~ pressedKeys:", pressedKeys);
   const [isFocused, setIsFocused] = useState(false);
-  console.log("🚀 ~ ShortcutInput ~ isFocused:", isFocused);
   const [isValid, setIsValid] = useState(false);
-  console.log("🚀 ~ ShortcutInput ~ isValid:", isValid);
   const [currentShortcut, setCurrentShortcut] = useState(value);
   const [pendingShortcut, setPendingShortcut] = useState(null);
   const [lastValidShortcut, setLastValidShortcut] = useState(value);
@@ -50,7 +47,6 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
       e.preventDefault();
       const key = e.key === " " ? "Space" : e.key;
 
-      // Reset validation state when user starts entering a new shortcut
       if (isValid && pressedKeys.length === 0) {
         setIsValid(false);
         setCurrentShortcut("");
