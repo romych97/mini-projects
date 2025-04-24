@@ -11,21 +11,16 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
   const [lastValidShortcut, setLastValidShortcut] = useState(value);
   const containerRef = useRef(null);
 
+  const normalizeKey = (key) => (key === " " ? "Space" : key);
+
   const isModifierKey = useCallback(
-    (key) => {
-      const normalizedKey = key.toLowerCase();
-      return modifiers.some((mod) => mod.toLowerCase() === normalizedKey);
-    },
+    (key) => modifiers.some((mod) => mod.toLowerCase() === key.toLowerCase()),
     [modifiers]
   );
 
   const isValidNonModifierKey = useCallback(
-    (key) => {
-      if (key.length !== 1) return false;
-      const isNonEnglish = /[^\x00-\x7F]/.test(key);
-      if (isNonEnglish) return false;
-      return !isModifierKey(key);
-    },
+    (key) =>
+      key.length === 1 && !/[^\x00-\x7F]/.test(key) && !isModifierKey(key),
     [isModifierKey]
   );
 
@@ -33,11 +28,9 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
     (keys) => {
       const mods = keys.filter(isModifierKey);
       const nonMods = keys.filter(isValidNonModifierKey);
-
-      if (mods.length >= 1 && nonMods.length === 1) {
-        return [...mods, ...nonMods].join("+");
-      }
-      return null;
+      return mods.length >= 1 && nonMods.length === 1
+        ? [...mods, ...nonMods].join("+")
+        : null;
     },
     [isModifierKey, isValidNonModifierKey]
   );
@@ -45,7 +38,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
   const handleKeyDown = useCallback(
     (e) => {
       e.preventDefault();
-      const key = e.key === " " ? "Space" : e.key;
+      const key = normalizeKey(e.key);
 
       if (isValid && pressedKeys.length === 0) {
         setIsValid(false);
@@ -56,9 +49,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
         const newKeys = Array.from(new Set([...prev, key]));
         const shortcut = parseShortcut(newKeys);
 
-        if (shortcut) {
-          setPendingShortcut(shortcut);
-        }
+        if (shortcut) setPendingShortcut(shortcut);
 
         return newKeys;
       });
@@ -68,16 +59,14 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
 
   const handleKeyUp = useCallback(
     (e) => {
-      const key = e.key === " " ? "Space" : e.key;
+      const key = normalizeKey(e.key);
 
       setPressedKeys((prev) => {
         const newKeys = prev.filter((k) => k !== key);
 
         if (newKeys.length === 0) {
           setIsValid(false);
-          if (!lastValidShortcut) {
-            setCurrentShortcut("");
-          }
+          if (!lastValidShortcut) setCurrentShortcut("");
         }
 
         return newKeys;
@@ -119,9 +108,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
     } else {
       removeEventListeners();
       setPressedKeys([]);
-      if (!isValid) {
-        setCurrentShortcut(lastValidShortcut || "");
-      }
+      if (!isValid) setCurrentShortcut(lastValidShortcut || "");
     }
 
     return removeEventListeners;
@@ -129,15 +116,15 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
 
   const getBorderColor = () => {
     if (pressedKeys.length > 0) return "border-gray-300";
-    if (isFocused) return "border-blue-500";
-    if (isValid) return "border-blue-500";
+    if (isFocused || isValid) return "border-blue-500";
     return "border-gray-300";
   };
 
-  const displayValue =
-    pressedKeys.length > 0 && !lastValidShortcut
-      ? pressedKeys.join(" + ")
-      : lastValidShortcut || currentShortcut || "Press shortcut";
+  const getDisplayValue = () => {
+    if (pressedKeys.length > 0 && !lastValidShortcut)
+      return pressedKeys.join(" + ");
+    return lastValidShortcut || currentShortcut || "Press shortcut";
+  };
 
   return (
     <div
@@ -146,9 +133,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
       onFocus={() => setIsFocused(true)}
       onBlur={() => {
         setIsFocused(false);
-        if (!isValid) {
-          setCurrentShortcut(lastValidShortcut || "");
-        }
+        if (!isValid) setCurrentShortcut(lastValidShortcut || "");
       }}
       className={`
         p-4
@@ -164,7 +149,7 @@ const ShortcutInput = ({ value, modifiers, onChange }) => {
         ${getBorderColor()}
       `}
     >
-      {displayValue}
+      {getDisplayValue()}
     </div>
   );
 };
