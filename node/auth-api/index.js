@@ -8,7 +8,7 @@ const MAX_ATTEMPTS = 5;
 const BLOCK_TIME_MINUTES = 15;
 const TRACK_WINDOW_MINUTES = 10;
 
-// Function to simulate authentication
+// runction to simulate authentication
 function authenticate(login, password) {
   return login === "admin" && password === "password123";
 }
@@ -48,7 +48,6 @@ app.post("/api/login", (req, res) => {
   } else {
     // if authentication fails, increment the fail count
     currentUser.fails += 1;
-    console.log("🚀 ~ app.post ~ currentUser.fails:", currentUser.fails);
 
     if (currentUser.fails >= MAX_ATTEMPTS) {
       currentUser.blockedUntil = new Date(
