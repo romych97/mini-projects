@@ -22,6 +22,7 @@ app.post("/api/login", (req, res) => {
   // initialize login entity
   if (!USER_ENTITY[ip]) {
     USER_ENTITY[ip] = { fails: 0, lastAttempt: now, blockedUntil: null };
+    // or create db request with new user
   }
 
   const currentUser = USER_ENTITY[ip];
@@ -36,6 +37,7 @@ app.post("/api/login", (req, res) => {
   // reset fails if the last attempt was outside the tracking window
   if (now - currentUser.lastAttempt > TRACK_WINDOW_MINUTES * 60 * 1000) {
     currentUser.fails = 0;
+    // or update db request with new fails field
   }
 
   currentUser.lastAttempt = now;
@@ -44,6 +46,13 @@ app.post("/api/login", (req, res) => {
     // if authentication is successful, reset the currentUser var
     currentUser.fails = 0;
     currentUser.blockedUntil = null;
+    // or update db request (prisma for example)
+    // Prisma.table.update( where: { user_ip: ip }, 
+    // data: {
+    //   fails: 0,
+    //   blocked_until: null,
+    //   last_attempt: new Date()
+    // })
     return res.json({ status: "success", message: "Login successful" });
   } else {
     // if authentication fails, increment the fail count
@@ -53,6 +62,7 @@ app.post("/api/login", (req, res) => {
       currentUser.blockedUntil = new Date(
         now.getTime() + BLOCK_TIME_MINUTES * 60 * 1000
       );
+      // or update db request with new time field
       return res
         .status(429)
         .json({ status: "error", message: "Too many attempts. Try later." });
